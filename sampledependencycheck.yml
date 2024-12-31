@@ -1,0 +1,43 @@
+name: Dependency Update Check
+
+on:
+  schedule:
+    - cron: '0 0 * * 1' # Runs every Monday at midnight
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  dependency-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛎️ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 📦 Install Dependencies
+        run: npm install
+
+      - name: 🚀 Run Dependency Checker Script
+        run: |
+          chmod +x ./check-dependencies.sh
+          ./check-dependencies.sh
+
+      - name: 📊 Upload Dependency Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-updates-summary
+          path: dependency-updates-summary.txt
+
+      - name: 📧 Notify via GitHub Issue (Optional)
+        if: always()
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "Dependency Updates Report"
+          content-filepath: dependency-updates-summary.txt
+          labels: |
+            dependencies
+            automated
